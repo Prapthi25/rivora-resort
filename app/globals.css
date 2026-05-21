@@ -1,26 +1,290 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap");
+
+/* ─── RIVORA COORG — Nature Resort Design System ─────────────────────────── */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core backgrounds — deep Coorg forest at dusk */
+  --bg:            #0B1A0D;
+  --bg-raised:     #112016;
+  --card:          #162B1A;
+  --card-hover:    #1C3520;
+  --card-deep:     #0E1B11;
+
+  /* Borders */
+  --border:        #2A4430;
+  --border-light:  #1E3326;
+  --border-gold:   #8A6520;
+
+  /* Brand gold — warm amber like morning mist on Coorg hills */
+  --gold:          #C8963E;
+  --gold-light:    #E2B86A;
+  --gold-dark:     #9A7028;
+  --gold-muted:    rgba(200,150,62,0.15);
+
+  /* Text — warm cream parchment */
+  --text:          #EDE8DC;
+  --text-soft:     #C8C4B8;
+  --text-muted:    #8A9E8E;
+  --text-faint:    #506055;
+
+  /* Semantic — nature-inspired */
+  --success:       #5BAD7A;
+  --success-bg:    rgba(91,173,122,0.12);
+  --success-border:rgba(91,173,122,0.35);
+
+  --danger:        #D4614A;
+  --danger-bg:     rgba(212,97,74,0.12);
+  --danger-border: rgba(212,97,74,0.35);
+
+  --warn:          #D4A03A;
+  --warn-bg:       rgba(212,160,58,0.12);
+
+  --info:          #4A9ABF;
+  --info-bg:       rgba(74,154,191,0.12);
+
+  /* Accent greens — forest canopy */
+  --forest:        #2D6A3F;
+  --moss:          #4A7A56;
+  --sage:          #7FA88A;
+  --fern:          #A8C4AA;
+
+  /* Font families */
+  --font-display:  'Cormorant Garamond', Georgia, serif;
+  --font-body:     'Nunito', 'Segoe UI', sans-serif;
+
+  /* Font sizes — accessible for all ages */
+  --text-xs:   0.8125rem;   /* 13px */
+  --text-sm:   0.9375rem;   /* 15px */
+  --text-base: 1.0625rem;   /* 17px */
+  --text-lg:   1.1875rem;   /* 19px */
+  --text-xl:   1.375rem;    /* 22px */
+  --text-2xl:  1.625rem;    /* 26px */
+  --text-3xl:  2rem;        /* 32px */
+
+  /* Spacing */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+
+  /* Shadows */
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.35);
+  --shadow-md:  0 4px 20px rgba(0,0,0,0.45);
+  --shadow-lg:  0 8px 40px rgba(0,0,0,0.55);
+  --shadow-gold: 0 0 24px rgba(200,150,62,0.2);
+
+  /* Transitions */
+  --ease: 0.18s cubic-bezier(0.4,0,0.2,1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ─── Reset & Base ──────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Typography ──────────────────────────────────────────────────────── */
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+}
+
+h4, h5, h6, p, span, div, label, button, input, select, textarea {
+  font-family: var(--font-body);
+}
+
+/* ─── Scrollbar — subtle forest green ──────────────────────────────────── */
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--moss); }
+
+/* ─── Form Elements — Nature Resort Style ───────────────────────────────── */
+
+input, textarea, select {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  background: var(--card-deep);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color var(--ease), box-shadow var(--ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input:hover, textarea:hover, select:hover {
+  border-color: var(--border-gold);
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(200,150,62,0.18);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-faint);
+}
+
+select option {
+  background: var(--card);
+  color: var(--text);
+}
+
+button {
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all var(--ease);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ─── Utility Classes ───────────────────────────────────────────────────── */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.card-raised {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── Responsive Breakpoints ───────────────────────────────────────────── */
+
+/* Mobile first — 320px+ base
+   Tablet  — 640px+
+   Desktop — 1024px+
+   Wide    — 1280px+ */
+
+/* ─── Selection ─────────────────────────────────────────────────────────── */
+
+::selection {
+  background: rgba(200,150,62,0.3);
+  color: var(--text);
+}
+
+/* ─── Focus Ring ────────────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ─── Tables ────────────────────────────────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+th {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+tr:hover td { background: var(--card-hover); }
+
+/* ─── Badges / Pills ────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Mobile-specific overrides ─────────────────────────────────────────── */
+
+@media (max-width: 639px) {
+  :root {
+    --text-base: 1rem;     /* 16px on mobile */
+    --text-sm:   0.9rem;   /* ~14px on mobile */
+  }
+
+  table { font-size: var(--text-xs); }
+  th, td { padding: 8px 10px; }
+
+  .card, .card-raised { padding: 14px; border-radius: var(--radius-md); }
+}
+
+/* ─── Tablet-specific ───────────────────────────────────────────────────── */
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  :root {
+    --text-base: 1.0625rem;
+  }
+}
+
+/* ─── Print ─────────────────────────────────────────────────────────────── */
+
+@media print {
+  body { background: #fff; color: #000; }
+  .no-print { display: none !important; }
 }
