@@ -389,10 +389,10 @@ export default function App() {
   useEffect(() => {
     DB.seedIfEmpty(DEFAULT_USERS, DEFAULT_SETTINGS);
     const subs = [
-      DB.subscribeBookings(d => { setBookings(d); setLoaded(true); }),
-      DB.subscribeSettings(s => { if (s) setSettings({ ...DEFAULT_SETTINGS, ...s }); }),
-      DB.subscribeUsers(u => { if (u.length) setUsers(u); }),
-      DB.subscribeAudit(a => setAuditLog(a)),
+      DB.subscribeBookings((d: any[]) => { setBookings(d); setLoaded(true); }),
+      DB.subscribeSettings((s: any) => { if (s) setSettings({ ...DEFAULT_SETTINGS, ...s }); }),
+      DB.subscribeUsers((u: any[]) => { if (u.length) setUsers(u); }),
+      DB.subscribeAudit((a: any[]) => setAuditLog(a)),
     ];
     return () => subs.forEach(u => u?.());
   }, []);
