@@ -7,7 +7,7 @@ import {
 } from "firebase/firestore";
 
 // ── Bookings ──────────────────────────────────────────────────────────────────
-export const subscribeBookings = (cb: Function) =>
+export const subscribeBookings = (cb: (bookings: any[]) => void) =>
   onSnapshot(
     collection(db, "bookings"),
     s => cb(s.docs.map(d => ({ ...d.data(), id: d.id }))),
@@ -21,14 +21,14 @@ export const deleteBooking = (id: string) =>
   deleteDoc(doc(db, "bookings", id));
 
 // ── Settings ──────────────────────────────────────────────────────────────────
-export const subscribeSettings = (cb: Function) =>
+export const subscribeSettings = (cb: (settings: any) => void) =>
   onSnapshot(doc(db, "meta", "settings"), d => cb(d.exists() ? d.data() : null));
 
 export const saveSettings = (s: any) =>
   setDoc(doc(db, "meta", "settings"), s, { merge: true });
 
 // ── Users ─────────────────────────────────────────────────────────────────────
-export const subscribeUsers = (cb: Function) =>
+export const subscribeUsers = (cb: (users: any[]) => void) =>
   onSnapshot(
     collection(db, "users"),
     s => cb(s.docs.map(d => ({ ...d.data(), _docId: d.id }))),
@@ -47,7 +47,7 @@ export const deleteUser = (username: string) =>
 // ── Audit log ─────────────────────────────────────────────────────────────────
 const AUDIT_MAX = 150;
 
-export const subscribeAudit = (cb: Function) =>
+export const subscribeAudit = (cb: (entries: any[]) => void) =>
   onSnapshot(
     query(collection(db, "audit"), orderBy("ts", "desc"), limit(AUDIT_MAX)),
     s => cb(s.docs.map(d => ({ ...d.data(), id: d.id }))),

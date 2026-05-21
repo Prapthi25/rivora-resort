@@ -414,7 +414,7 @@ export default function MainApp({
         {tab === "bookings"     && (
           <BookingsList bookings={bookings} can={can} onView={openView}
             patchB={patchB} delB={delB} notify={notify} setSel={setSel}
-            setModal={setModal} onInvoice={b => setInvoiceSel(b)}/>
+            setModal={setModal} onInvoice={(b: any) => setInvoiceSel(b)}/>
         )}
         {tab === "payments"     && (
           <Payments bookings={bookings} settings={settings} patchB={patchB} can={can}/>

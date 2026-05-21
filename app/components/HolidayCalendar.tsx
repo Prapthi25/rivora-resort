@@ -372,11 +372,13 @@ export default function HolidayCalendar({ settings, setSettings, notify, can }: 
               <div style={{ flex: 1, minWidth: 160 }}>
                 <div style={labelStyle}>Rate per head per night (₹)</div>
                 <input type="number" key={sel} defaultValue={cp[sel] || ""}
-                  onBlur={e => setCustom(sel, e.target.value)}
+                  onBlur={e => {
+                    setCustom(sel, e.target.value);
+                    (e.target as HTMLElement).style.borderColor = "var(--border)";
+                  }}
                   style={inputStyle}
                   placeholder={`Default: ₹${settings.familyRate || 2000}`}
                   onFocus={e => (e.target as HTMLElement).style.borderColor = "var(--gold)"}
-                  onBlur2={e => (e.target as HTMLElement).style.borderColor = "var(--border)"}
                 />
               </div>
               {cp[sel] && (
