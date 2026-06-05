@@ -419,10 +419,10 @@ export default function Dashboard({ bookings, onView }: {
   bookings: any[]; onView: (b: any) => void;
 }) {
   const active     = useMemo(() => bookings.filter(b => b.status !== "Cancelled"),  [bookings]);
-  const arriving   = useMemo(() => active.filter(b => b.checkIn === todayStr),       [active]);
-  const departing  = useMemo(() => active.filter(b => b.checkOut === todayStr),      [active]);
+  const arriving   = useMemo(() => active.filter(b => b.status === "Confirmed" && b.checkIn === todayStr),       [active]);
+  const departing  = useMemo(() => active.filter(b => b.status === "Checked In" && b.checkOut === todayStr),      [active]);
   const occupied   = useMemo(() =>
-    active.filter(b => b.checkIn <= todayStr && b.checkOut > todayStr), [active]);
+    active.filter(b => b.status === "Checked In" && b.checkIn <= todayStr && b.checkOut > todayStr), [active]);
   const overdueIn  = useMemo(() => active.filter(isOverdueCheckIn),                  [active]);
   const overdueOut = useMemo(() => active.filter(isOverdueCheckOut),                 [active]);
 
