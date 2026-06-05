@@ -119,7 +119,7 @@
 import { useState } from "react";
 import {
   Plus, Users, Settings, Calendar, LayoutDashboard,
-  CreditCard, BookOpen, Lock, BarChart2, Activity, ChevronDown,
+  CreditCard, BookOpen, Lock, BarChart2, Activity, ChevronDown, Receipt,
 } from "lucide-react";
 import { D, F } from "../lib/constants";
 import { btn } from "../lib/ui";
@@ -137,6 +137,7 @@ import BookingModal    from "./modals/BookingModal";
 import ViewModal       from "./modals/ViewModal";
 import WAModal         from "./modals/WAModal";
 import InvoiceModal    from "./modals/InvoiceModal";
+import Expenses        from "./Expenses";
 
 /* ─── Nav tab definition ─────────────────────────────────────────────────── */
 
@@ -161,6 +162,7 @@ const MAIN_TABS: Tab[] = [
 ];
 
 const ADMIN_TABS: Tab[] = [
+  { k: "expenses", i: <Receipt  size={iconSize}/>, l: "Expenses", adminOnly: true },
   { k: "audit",    i: <Activity  size={iconSize}/>, l: "Audit",    adminOnly: true },
   { k: "users",    i: <Lock      size={iconSize}/>, l: "Users",    adminOnly: true },
   { k: "settings", i: <Settings  size={iconSize}/>, l: "Settings", adminOnly: true },
@@ -314,6 +316,7 @@ export default function MainApp({
   bookings, settings, users, session, can,
   addB, patchB, delB, setSettings, notify,
   exportCSV, auditLog, clearAudit,
+  expenses, customCategories, addExpense, deleteExpense, saveExpenseCategories,
 }: any) {
   const [tab,       setTab]       = useState<TabKey>(
     can.viewer && !can.staff ? "availability" : "dashboard"
@@ -425,6 +428,17 @@ export default function MainApp({
             notify={notify} can={can}/>
         )}
         {tab === "guests"       && <Guests bookings={bookings}/>}
+        {tab === "expenses" && can.admin && (
+          <Expenses
+            expenses={expenses ?? []}
+            customCategories={customCategories ?? []}
+            onAdd={addExpense}
+            onDelete={deleteExpense}
+            onSaveCategories={saveExpenseCategories}
+            notify={notify}
+            session={session}
+          />
+        )}
         {tab === "audit"   && can.admin && (
           <AuditLog auditLog={auditLog} clearAudit={clearAudit}/>
         )}

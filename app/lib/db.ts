@@ -64,6 +64,31 @@ export const clearAudit = async () => {
   return batch.commit();
 };
 
+// ── Expenses ─────────────────────────────────────────────────────────────────
+export const subscribeExpenses = (cb: (expenses: any[]) => void) =>
+  onSnapshot(
+    query(collection(db, "expenses"), orderBy("date", "desc")),
+    s => cb(s.docs.map(d => ({ ...d.data(), id: d.id }))),
+    e => console.error("expenses sub error", e)
+  );
+
+export const saveExpense = (e: any) =>
+  setDoc(doc(db, "expenses", e.id), e, { merge: true });
+
+export const deleteExpense = (id: string) =>
+  deleteDoc(doc(db, "expenses", id));
+
+// ── Expense Categories (custom) ───────────────────────────────────────────────
+export const subscribeExpenseCategories = (cb: (cats: string[]) => void) =>
+  onSnapshot(
+    doc(db, "meta", "expenseCategories"),
+    d => cb(d.exists() ? (d.data()?.list ?? []) : []),
+    e => console.error("expenseCategories sub error", e)
+  );
+
+export const saveExpenseCategories = (list: string[]) =>
+  setDoc(doc(db, "meta", "expenseCategories"), { list }, { merge: true });
+
 // ── Seed ─────────────────────────────────────────────────────────────────────
 // Only seeds if collections are empty (first run)
 export const seedIfEmpty = async (defaultUsers: any[], defaultSettings: any) => {

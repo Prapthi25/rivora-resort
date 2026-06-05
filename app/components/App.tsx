@@ -369,13 +369,15 @@ function Toast({ msg, type }: { msg: string; type: string }) {
 /* ─── App ───────────────────────────────────────────────────────────────── */
 
 export default function App() {
-  const [session,  setSession]  = useState<any>(null);
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [users,    setUsers]    = useState(DEFAULT_USERS);
-  const [auditLog, setAuditLog] = useState<any[]>([]);
-  const [toast,    setToast]    = useState<{msg:string; type:string}|null>(null);
-  const [loaded,   setLoaded]   = useState(false);
+  const [session,          setSession]          = useState<any>(null);
+  const [bookings,         setBookings]         = useState<any[]>([]);
+  const [settings,         setSettings]         = useState(DEFAULT_SETTINGS);
+  const [users,            setUsers]            = useState(DEFAULT_USERS);
+  const [auditLog,         setAuditLog]         = useState<any[]>([]);
+  const [expenses,         setExpenses]         = useState<any[]>([]);
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [toast,            setToast]            = useState<{msg:string; type:string}|null>(null);
+  const [loaded,           setLoaded]           = useState(false);
 
   /* Restore session */
   useEffect(() => {
@@ -393,6 +395,8 @@ export default function App() {
       DB.subscribeSettings((s: any) => { if (s) setSettings({ ...DEFAULT_SETTINGS, ...s }); }),
       DB.subscribeUsers((u: any[]) => { if (u.length) setUsers(u); }),
       DB.subscribeAudit((a: any[]) => setAuditLog(a)),
+      DB.subscribeExpenses((e: any[]) => setExpenses(e)),
+      DB.subscribeExpenseCategories((c: string[]) => setCustomCategories(c)),
     ];
     return () => subs.forEach(u => u?.());
   }, []);
@@ -431,6 +435,19 @@ export default function App() {
     await DB.clearAudit();
     notify("Audit log cleared");
   }, [notify]);
+
+  /* Expense operations */
+  const addExpense = useCallback(async (e: any) => {
+    await DB.saveExpense(e);
+  }, []);
+
+  const deleteExpenseItem = useCallback(async (id: string) => {
+    await DB.deleteExpense(id);
+  }, []);
+
+  const saveExpenseCategories = useCallback(async (cats: string[]) => {
+    await DB.saveExpenseCategories(cats);
+  }, []);
 
   const exportCSV = useCallback(() => {
     const h = ["ID","Guest","Phone","Rooms","CheckIn","CheckOut","Nights","Adults","Kids","Total","Collected","Balance","Status","BookedBy"];
@@ -572,6 +589,11 @@ export default function App() {
             exportCSV={exportCSV}
             auditLog={auditLog}
             clearAudit={clearAudit}
+            expenses={expenses}
+            customCategories={customCategories}
+            addExpense={addExpense}
+            deleteExpense={deleteExpenseItem}
+            saveExpenseCategories={saveExpenseCategories}
           />
         )
       }
