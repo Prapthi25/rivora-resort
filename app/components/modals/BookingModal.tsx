@@ -241,7 +241,7 @@
 // }
 
 "use client";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Plus, XCircle, AlertCircle, ChevronDown } from "lucide-react";
 import { D, ROOMS } from "../../lib/constants";
 import { inp, lbl, btn } from "../../lib/ui";
@@ -515,6 +515,30 @@ export default function BookingModal({
     );
   }, [roomSlots, bookings, f.checkIn, f.checkOut]);
 
+  useEffect(() => {
+    if (!f.checkIn || !f.checkOut) return;
+    setRoomSlots(slots => {
+      let changed = false;
+      const newSlots = slots.map((slot, i) => {
+        const otherIds = slots.filter((_, j) => j !== i).map(s => s.roomId);
+        const avail = ROOMS.filter(r =>
+          r.type === slot.roomType &&
+          !otherIds.includes(r.id) &&
+          !bookings.some((b: any) =>
+            getRoomIds(b).includes(r.id) &&
+            b.status !== "Cancelled" && b.status !== "Checked Out" &&
+            b.checkIn < f.checkOut && b.checkOut > f.checkIn)
+        );
+        if (avail.length > 0 && !avail.some(a => a.id === slot.roomId)) {
+          changed = true;
+          return { ...slot, roomId: avail[0].id };
+        }
+        return slot;
+      });
+      return changed ? newSlots : slots;
+    });
+  }, [f.checkIn, f.checkOut, bookings]);
+
   const vegWarn = (Number(f.vegCount || 0) + Number(f.nonVegCount || 0)) > totalGuests && totalGuests > 0
     ? "Veg + Non-Veg count exceeds total guests" : "";
   const pastWarn = f.checkIn && f.checkIn < todayStr
@@ -663,6 +687,7 @@ export default function BookingModal({
                     updateSlot(i, "roomType", t);
                     updateSlot(i, "roomId", ROOMS.find(r => r.type === t)?.id || (t === "Family" ? "FR-01" : "CR-01"));
                     if (i === 0) upd("ratePerHead", t === "Family" ? settings.familyRate : settings.coupleRate);
+                    setErr("");
                   }}
                 >
                   <option value="Family">Family (3+ sharing)</option>
@@ -673,7 +698,7 @@ export default function BookingModal({
               <Field label="Room">
                 <Select
                   value={slot.roomId}
-                  onChange={v => updateSlot(i, "roomId", v)}
+                  onChange={v => { updateSlot(i, "roomId", v); setErr(""); }}
                 >
                   {avail.map(r => <option key={r.id} value={r.id}>{r.id}</option>)}
                   {avail.length === 0 && <option>None available</option>}
