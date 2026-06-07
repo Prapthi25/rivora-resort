@@ -5,6 +5,7 @@ import {
   Plus, Trash2, Download, Tag, X, ChevronUp, ChevronDown,
   Receipt, Search, SlidersHorizontal, TrendingUp, IndianRupee,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 
@@ -654,6 +655,8 @@ function ManageCategoriesModal({
 
 /* ─── Main Expenses Component ────────────────────────────────────────────── */
 
+type FilterMode = "month" | "date" | "range";
+
 export default function Expenses({
   expenses, customCategories, onAdd, onDelete, onSaveCategories, notify, session,
 }: Props) {
@@ -664,25 +667,42 @@ export default function Expenses({
 
   const now = new Date();
   const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const todayStr = now.toISOString().slice(0, 10);
 
-  const [filterMonth, setFilterMonth]   = useState(curMonth);
-  const [filterCat,   setFilterCat]     = useState("All");
-  const [search,      setSearch]        = useState("");
-  const [sortKey,     setSortKey]       = useState<"date"|"amount"|"category">("date");
-  const [sortDir,     setSortDir]       = useState<"asc"|"desc">("desc");
-  const [showAdd,     setShowAdd]       = useState(false);
-  const [showManage,  setShowManage]    = useState(false);
-  const [deleting,    setDeleting]      = useState<string | null>(null);
+  /* ── Calendar filter state ── */
+  const [filterMode,  setFilterMode]  = useState<FilterMode>("month");
+  const [filterMonth, setFilterMonth] = useState(curMonth);
+  const [filterDate,  setFilterDate]  = useState(todayStr);
+  const [filterFrom,  setFilterFrom]  = useState(todayStr);
+  const [filterTo,    setFilterTo]    = useState(todayStr);
+
+  const [filterCat,   setFilterCat]   = useState("All");
+  const [search,      setSearch]      = useState("");
+  const [sortKey,     setSortKey]     = useState<"date"|"amount"|"category">("date");
+  const [sortDir,     setSortDir]     = useState<"asc"|"desc">("desc");
+  const [showAdd,     setShowAdd]     = useState(false);
+  const [showManage,  setShowManage]  = useState(false);
+  const [deleting,    setDeleting]    = useState<string | null>(null);
 
   /* ── Derived data ── */
-  const thisMonthExpenses = useMemo(
-    () => expenses.filter(e => monthKey(e.date) === filterMonth),
-    [expenses, filterMonth]
-  );
 
-  const totalThisMonth = useMemo(
-    () => thisMonthExpenses.reduce((s, e) => s + Number(e.amount || 0), 0),
-    [thisMonthExpenses]
+  // Expenses matching the active calendar filter
+  const periodExpenses = useMemo(() => {
+    if (filterMode === "month") {
+      return expenses.filter(e => monthKey(e.date) === filterMonth);
+    }
+    if (filterMode === "date") {
+      return expenses.filter(e => e.date === filterDate);
+    }
+    // range — swap if from > to
+    const from = filterFrom <= filterTo ? filterFrom : filterTo;
+    const to   = filterFrom <= filterTo ? filterTo   : filterFrom;
+    return expenses.filter(e => e.date >= from && e.date <= to);
+  }, [expenses, filterMode, filterMonth, filterDate, filterFrom, filterTo]);
+
+  const totalPeriod = useMemo(
+    () => periodExpenses.reduce((s, e) => s + Number(e.amount || 0), 0),
+    [periodExpenses]
   );
 
   const totalAllTime = useMemo(
@@ -692,13 +712,13 @@ export default function Expenses({
 
   const topCategory = useMemo(() => {
     const map: Record<string, number> = {};
-    thisMonthExpenses.forEach(e => { map[e.category] = (map[e.category] ?? 0) + Number(e.amount || 0); });
+    periodExpenses.forEach(e => { map[e.category] = (map[e.category] ?? 0) + Number(e.amount || 0); });
     const top = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
     return top ? `${catEmoji(top[0])} ${top[0]}` : "—";
-  }, [thisMonthExpenses]);
+  }, [periodExpenses]);
 
   const filtered = useMemo(() => {
-    let list = [...thisMonthExpenses];
+    let list = [...periodExpenses];
     if (filterCat !== "All") list = list.filter(e => e.category === filterCat);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -711,15 +731,15 @@ export default function Expenses({
     }
     list.sort((a, b) => {
       let va: any, vb: any;
-      if (sortKey === "date")     { va = a.date; vb = b.date; }
+      if (sortKey === "date")        { va = a.date; vb = b.date; }
       else if (sortKey === "amount") { va = Number(a.amount); vb = Number(b.amount); }
-      else { va = a.category; vb = b.category; }
+      else                           { va = a.category; vb = b.category; }
       return sortDir === "asc"
         ? (va < vb ? -1 : va > vb ? 1 : 0)
         : (va > vb ? -1 : va < vb ? 1 : 0);
     });
     return list;
-  }, [thisMonthExpenses, filterCat, search, sortKey, sortDir]);
+  }, [periodExpenses, filterCat, search, sortKey, sortDir]);
 
   const handleSort = (key: "date"|"amount"|"category") => {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -743,28 +763,62 @@ export default function Expenses({
     }
   };
 
-  const exportCSV = () => {
+  const exportExcel = () => {
     const h = ["Date","Category","Employee","Amount (₹)","Description","Paid By","Payment Method","Created By","Created At"];
     const rows = filtered.map(e => [
       e.date, e.category, e.employeeName ?? "",
       e.amount, e.description ?? "", e.paidBy, e.paymentMethod,
       e.createdBy, e.createdAt,
     ]);
-    const csv = [h, ...rows]
-      .map(r => r.map(x => `"${String(x ?? "").replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const a = document.createElement("a");
-    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = `rivora_expenses_${filterMonth}.csv`;
-    a.click();
-    notify("CSV downloaded!");
+    const worksheet = XLSX.utils.aoa_to_sheet([h, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+    const fileName = `rivora_expenses_${filterMode === "month" ? filterMonth : filterMode === "date" ? filterDate : `${filterFrom}_to_${filterTo}`}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    notify("Excel downloaded!");
   };
 
+  /* ── small style helpers ── */
   const thStyle: React.CSSProperties = {
     cursor: "pointer", userSelect: "none",
     transition: "color 0.15s",
     whiteSpace: "nowrap",
   };
+
+  const tabBtnStyle = (active: boolean): React.CSSProperties => ({
+    padding: "7px 14px",
+    fontSize: "var(--text-xs)",
+    fontWeight: 700,
+    border: "none",
+    cursor: "pointer",
+    transition: "background 0.18s, color 0.18s",
+    background: active ? "linear-gradient(135deg,#C8963E,#A87830)" : "transparent",
+    color: active ? "#0B1A0D" : "var(--text-muted)",
+  });
+
+  const resetBtnStyle: React.CSSProperties = {
+    padding: "6px 12px", fontSize: "var(--text-xs)", fontWeight: 700,
+    background: "var(--card-hover)", border: "1px solid var(--border)",
+    borderRadius: "var(--radius-md)", color: "var(--text-muted)", cursor: "pointer",
+  };
+
+  const labelChipStyle: React.CSSProperties = {
+    fontSize: "var(--text-xs)", fontWeight: 700,
+    color: "var(--text-muted)", whiteSpace: "nowrap",
+  };
+
+  /* ── period label for summary card ── */
+  const periodLabel = (() => {
+    if (filterMode === "month") {
+      const [y, m] = filterMonth.split("-");
+      const d = new Date(Number(y), Number(m) - 1, 1);
+      return d.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+    }
+    if (filterMode === "date") return fmtDate(filterDate);
+    const from = filterFrom <= filterTo ? filterFrom : filterTo;
+    const to   = filterFrom <= filterTo ? filterTo   : filterFrom;
+    return `${fmtDate(from)} – ${fmtDate(to)}`;
+  })();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -789,14 +843,14 @@ export default function Expenses({
           }}>
             <Tag size={13} /> Categories
           </button>
-          <button onClick={exportCSV} style={{
+          <button onClick={exportExcel} style={{
             display: "flex", alignItems: "center", gap: 6,
             padding: "8px 16px",
             background: "var(--card-hover)", border: "1px solid var(--border)",
             borderRadius: "var(--radius-md)", color: "var(--text-soft)",
             fontSize: "var(--text-sm)", fontWeight: 600, cursor: "pointer",
           }}>
-            <Download size={13} /> Export CSV
+            <Download size={13} /> Export Excel
           </button>
           <button onClick={() => setShowAdd(true)} style={{
             display: "flex", alignItems: "center", gap: 6,
@@ -814,9 +868,9 @@ export default function Expenses({
       {/* ── Summary Cards ──────────────────────────────────────────────── */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
         <SummaryCard
-          label="This Month"
-          value={fmt(totalThisMonth)}
-          sub={`${thisMonthExpenses.length} expense${thisMonthExpenses.length !== 1 ? "s" : ""}`}
+          label={periodLabel}
+          value={fmt(totalPeriod)}
+          sub={`${periodExpenses.length} expense${periodExpenses.length !== 1 ? "s" : ""}`}
           icon={<IndianRupee size={18} />}
           color="var(--gold)"
         />
@@ -830,7 +884,7 @@ export default function Expenses({
         <SummaryCard
           label="Top Category"
           value={topCategory}
-          sub="This month"
+          sub="Selected period"
           icon={<Tag size={18} />}
           color="var(--success)"
         />
@@ -839,7 +893,7 @@ export default function Expenses({
       {/* ── Charts ─────────────────────────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
         <MonthlyChart expenses={expenses} allCategories={allCategories} />
-        <CategoryChart expenses={thisMonthExpenses} allCategories={allCategories} />
+        <CategoryChart expenses={periodExpenses} allCategories={allCategories} />
       </div>
 
       {/* ── Filters ────────────────────────────────────────────────────── */}
@@ -848,40 +902,119 @@ export default function Expenses({
         border: "1px solid var(--border)",
         borderRadius: "var(--radius-lg)",
         padding: "16px 20px",
-        display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center",
+        display: "flex", flexDirection: "column", gap: 14,
       }}>
-        <SlidersHorizontal size={14} color="var(--text-muted)" />
 
-        {/* Month picker */}
-        <input
-          type="month"
-          value={filterMonth}
-          onChange={e => setFilterMonth(e.target.value)}
-          style={{ width: "auto", colorScheme: "dark", minWidth: 150 }}
-        />
+        {/* Row 1 — mode tabs + category + search */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+          <SlidersHorizontal size={14} color="var(--text-muted)" />
 
-        {/* Category filter */}
-        <select
-          value={filterCat}
-          onChange={e => setFilterCat(e.target.value)}
-          style={{ width: "auto", minWidth: 180 }}
-        >
-          <option value="All">All Categories</option>
-          {allCategories.map(c => (
-            <option key={c} value={c}>{catEmoji(c)} {c}</option>
-          ))}
-        </select>
+          {/* Filter mode tab strip */}
+          <div style={{
+            display: "inline-flex",
+            background: "var(--card-deep)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-md)",
+            overflow: "hidden",
+          }}>
+            {([
+              { key: "month" as FilterMode, label: "📅 This Month" },
+              { key: "date"  as FilterMode, label: "📆 Specific Date" },
+              { key: "range" as FilterMode, label: "🗓️ Date Range" },
+            ]).map((tab, idx, arr) => (
+              <button
+                key={tab.key}
+                onClick={() => setFilterMode(tab.key)}
+                style={{
+                  ...tabBtnStyle(filterMode === tab.key),
+                  borderRight: idx < arr.length - 1 ? "1px solid var(--border)" : "none",
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Search */}
-        <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
-          <Search size={13} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-faint)", pointerEvents: "none" }} />
-          <input
-            placeholder="Search description, employee…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ paddingLeft: 34 }}
-          />
+          {/* Category filter */}
+          <select
+            value={filterCat}
+            onChange={e => setFilterCat(e.target.value)}
+            style={{ width: "auto", minWidth: 180 }}
+          >
+            <option value="All">All Categories</option>
+            {allCategories.map(c => (
+              <option key={c} value={c}>{catEmoji(c)} {c}</option>
+            ))}
+          </select>
+
+          {/* Search */}
+          <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
+            <Search size={13} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-faint)", pointerEvents: "none" }} />
+            <input
+              placeholder="Search description, employee…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ paddingLeft: 34 }}
+            />
+          </div>
         </div>
+
+        {/* Row 2 — date control(s) depending on active mode */}
+        {filterMode === "month" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={labelChipStyle}>Month</span>
+            <input
+              type="month"
+              value={filterMonth}
+              onChange={e => setFilterMonth(e.target.value)}
+              style={{ width: "auto", colorScheme: "dark", minWidth: 150 }}
+            />
+            <button onClick={() => setFilterMonth(curMonth)} style={resetBtnStyle}>
+              Current Month
+            </button>
+          </div>
+        )}
+
+        {filterMode === "date" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={labelChipStyle}>Select Date</span>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={e => setFilterDate(e.target.value)}
+              style={{ width: "auto", colorScheme: "dark", minWidth: 160 }}
+            />
+            <button onClick={() => setFilterDate(todayStr)} style={resetBtnStyle}>
+              Today
+            </button>
+          </div>
+        )}
+
+        {filterMode === "range" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={labelChipStyle}>From</span>
+            <input
+              type="date"
+              value={filterFrom}
+              onChange={e => setFilterFrom(e.target.value)}
+              style={{ width: "auto", colorScheme: "dark", minWidth: 160 }}
+            />
+            <span style={labelChipStyle}>To</span>
+            <input
+              type="date"
+              value={filterTo}
+              onChange={e => setFilterTo(e.target.value)}
+              style={{ width: "auto", colorScheme: "dark", minWidth: 160 }}
+            />
+            <button
+              onClick={() => { setFilterFrom(todayStr); setFilterTo(todayStr); }}
+              style={resetBtnStyle}
+            >
+              Reset
+            </button>
+          </div>
+        )}
+
       </div>
 
       {/* ── Expenses Table ──────────────────────────────────────────────── */}
