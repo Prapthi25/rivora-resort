@@ -89,6 +89,20 @@ export const subscribeExpenseCategories = (cb: (cats: string[]) => void) =>
 export const saveExpenseCategories = (list: string[]) =>
   setDoc(doc(db, "meta", "expenseCategories"), { list }, { merge: true });
 
+// ── Bills ────────────────────────────────────────────────────────────────────
+export const subscribeBills = (cb: (bills: any[]) => void) =>
+  onSnapshot(
+    query(collection(db, "bills"), orderBy("createdAt", "desc")),
+    s => cb(s.docs.map(d => ({ ...d.data(), id: d.id }))),
+    e => console.error("bills sub error", e)
+  );
+
+export const saveBill = (b: any) =>
+  setDoc(doc(db, "bills", b.id), b, { merge: true });
+
+export const deleteBill = (id: string) =>
+  deleteDoc(doc(db, "bills", id));
+
 // ── Seed ─────────────────────────────────────────────────────────────────────
 // Only seeds if collections are empty (first run)
 export const seedIfEmpty = async (defaultUsers: any[], defaultSettings: any) => {

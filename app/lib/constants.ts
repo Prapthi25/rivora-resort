@@ -69,4 +69,5 @@ export const DEFAULT_SETTINGS = {
     "Fire Camp with Music","Swimming Pool Access","River Walk","Estate Walk",
   ],
   customPrices: {} as Record<string,number>,
+  gstin: "",
 };

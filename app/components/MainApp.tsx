@@ -119,7 +119,7 @@
 import { useState } from "react";
 import {
   Plus, Users, Settings, Calendar, LayoutDashboard,
-  CreditCard, BookOpen, Lock, BarChart2, Activity, ChevronDown, Receipt,
+  CreditCard, BookOpen, Lock, BarChart2, Activity, ChevronDown, Receipt, FileText,
 } from "lucide-react";
 import { D, F } from "../lib/constants";
 import { btn } from "../lib/ui";
@@ -138,6 +138,7 @@ import ViewModal       from "./modals/ViewModal";
 import WAModal         from "./modals/WAModal";
 import InvoiceModal    from "./modals/InvoiceModal";
 import Expenses        from "./Expenses";
+import Billing         from "./Billing";
 
 /* ─── Nav tab definition ─────────────────────────────────────────────────── */
 
@@ -156,6 +157,7 @@ const MAIN_TABS: Tab[] = [
   { k: "availability", i: <Calendar        size={iconSize}/>, l: "Availability"},
   { k: "bookings",     i: <BookOpen        size={iconSize}/>, l: "Bookings"    },
   { k: "payments",     i: <CreditCard      size={iconSize}/>, l: "Payments"    },
+  { k: "billing",      i: <FileText        size={iconSize}/>, l: "Billing"     },
   { k: "analytics",    i: <BarChart2       size={iconSize}/>, l: "Analytics"   },
   { k: "calendar",     i: <Calendar        size={iconSize}/>, l: "Holidays"    },
   { k: "guests",       i: <Users           size={iconSize}/>, l: "Guests"      },
@@ -317,6 +319,7 @@ export default function MainApp({
   addB, patchB, delB, setSettings, notify,
   exportCSV, auditLog, clearAudit,
   expenses, customCategories, addExpense, deleteExpense, saveExpenseCategories,
+  bills, saveBill, deleteBill,
 }: any) {
   const [tab,       setTab]       = useState<TabKey>(
     can.viewer && !can.staff ? "availability" : "dashboard"
@@ -421,6 +424,18 @@ export default function MainApp({
         )}
         {tab === "payments"     && (
           <Payments bookings={bookings} settings={settings} patchB={patchB} can={can}/>
+        )}
+        {tab === "billing"      && (
+          <Billing
+            bookings={bookings}
+            settings={settings}
+            patchB={patchB}
+            notify={notify}
+            session={session}
+            bills={bills}
+            saveBill={saveBill}
+            deleteBill={deleteBill}
+          />
         )}
         {tab === "analytics"    && <Analytics bookings={bookings}/>}
         {tab === "calendar"     && (

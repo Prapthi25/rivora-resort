@@ -336,6 +336,12 @@ export default function SettingsPanel({ settings, setSettings, notify, exportCSV
               style={inputStyle} placeholder="Account number"
               onFocus={focusGold} onBlur={blurDefault}/>
           </Field>
+          <Field label="GSTIN (for GST Bills)">
+            <input value={s.gstin || ""}
+              onChange={e => setS((p: any) => ({ ...p, gstin: e.target.value }))}
+              style={inputStyle} placeholder="GSTIN Number"
+              onFocus={focusGold} onBlur={blurDefault}/>
+          </Field>
         </SectionCard>
 
       </div>

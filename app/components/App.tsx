@@ -376,6 +376,7 @@ export default function App() {
   const [auditLog,         setAuditLog]         = useState<any[]>([]);
   const [expenses,         setExpenses]         = useState<any[]>([]);
   const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [bills,            setBills]            = useState<any[]>([]);
   const [toast,            setToast]            = useState<{msg:string; type:string}|null>(null);
   const [loaded,           setLoaded]           = useState(false);
 
@@ -397,6 +398,7 @@ export default function App() {
       DB.subscribeAudit((a: any[]) => setAuditLog(a)),
       DB.subscribeExpenses((e: any[]) => setExpenses(e)),
       DB.subscribeExpenseCategories((c: string[]) => setCustomCategories(c)),
+      DB.subscribeBills((b: any[]) => setBills(b)),
     ];
     return () => subs.forEach(u => u?.());
   }, []);
@@ -447,6 +449,15 @@ export default function App() {
 
   const saveExpenseCategories = useCallback(async (cats: string[]) => {
     await DB.saveExpenseCategories(cats);
+  }, []);
+
+  /* Bill operations */
+  const saveBill = useCallback(async (b: any) => {
+    await DB.saveBill(b);
+  }, []);
+
+  const deleteBill = useCallback(async (id: string) => {
+    await DB.deleteBill(id);
   }, []);
 
   const exportCSV = useCallback(() => {
@@ -594,6 +605,9 @@ export default function App() {
             addExpense={addExpense}
             deleteExpense={deleteExpenseItem}
             saveExpenseCategories={saveExpenseCategories}
+            bills={bills}
+            saveBill={saveBill}
+            deleteBill={deleteBill}
           />
         )
       }
